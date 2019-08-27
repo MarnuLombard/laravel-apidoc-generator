@@ -130,11 +130,9 @@ class Generator
             ->filter(function ($tag) {
                 return $tag instanceof Tag && $tag->getName() === 'bodyParam';
             })
-            ->filter(function (Tag $tag) {
-                return ! $this->shouldExcludeExample($tag);
-            })
             ->mapWithKeys(function ($tag) {
                 preg_match('/(.+?)\s+(.+?)\s+(required\s+)?(.*)/', $tag->getContent(), $content);
+                $content = preg_replace('/\s?No-example.?/', '', $content);
                 if (empty($content)) {
                     // this means only name and type were supplied
                     list($name, $type) = preg_split('/\s+/', $tag->getContent());
@@ -152,7 +150,7 @@ class Generator
 
                 $type = $this->normalizeParameterType($type);
                 list($description, $example) = $this->parseDescription($description, $type);
-                $value = is_null($example) ? $this->generateDummyValue($type) : $example;
+                $value = is_null($example) && ! $this->shouldExcludeExample($tag) ? $this->generateDummyValue($type) : $example;
 
                 return [$name => compact('type', 'description', 'required', 'value')];
             })->toArray();
@@ -208,11 +206,9 @@ class Generator
             ->filter(function ($tag) {
                 return $tag instanceof Tag && $tag->getName() === 'queryParam';
             })
-            ->filter(function (Tag $tag) {
-                return ! $this->shouldExcludeExample($tag);
-            })
             ->mapWithKeys(function ($tag) {
                 preg_match('/(.+?)\s+(required\s+)?(.*)/', $tag->getContent(), $content);
+                $content = preg_replace('/\s?No-example.?/', '', $content);
                 if (empty($content)) {
                     // this means only name was supplied
                     list($name) = preg_split('/\s+/', $tag->getContent());
@@ -229,7 +225,7 @@ class Generator
                 }
 
                 list($description, $value) = $this->parseDescription($description, 'string');
-                if (is_null($value)) {
+                if (is_null($value) && ! $this->shouldExcludeExample($tag)) {
                     $value = str_contains($description, ['number', 'count', 'page'])
                         ? $this->generateDummyValue('integer')
                         : $this->generateDummyValue('string');
