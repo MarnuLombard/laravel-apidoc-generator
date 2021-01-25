@@ -168,7 +168,10 @@ class Generator
         foreach ($strategies as $strategyClass) {
             $strategy = new $strategyClass($stage, $this->config);
             $strategyArgs = $arguments;
-            $strategyArgs[] = $context;
+
+            // The `Strategy` class expects the $context array as the 5th position, or array key 4
+            $contextPosition = 4;
+            $strategyArgs[$contextPosition] = $context;
             $results = $strategy(...$strategyArgs);
             if (! is_null($results)) {
                 foreach ($results as $index => $item) {
